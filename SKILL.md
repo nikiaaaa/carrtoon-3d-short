@@ -1,6 +1,6 @@
 ---
 name: "cartoon-3d-short"
-description: "Make a ~55-70 s vertical cartoon story short: 2D bean-head characters in a colourful 3D world, voice narration, synthesized SFX and music, rendered with three.js inside Remotion. Use for 'like the bridge video' or a cartoon 3D history/science short."
+description: "Make a ~55-70 s vertical cartoon story short: 2D bean-head characters in a colourful 3D world built from code, voice narration, licensed real SFX and music, rendered with three.js inside Remotion. Use for 'like the bridge video' or a cartoon 3D history/science short."
 ---
 
 # Cartoon 3D story short (three.js + Remotion)
@@ -18,7 +18,7 @@ The style reference is a channel studied privately (`references/`: STYLE_BIBLE.m
 
 Default rules (the repo author's; change if the user says otherwise):
 - No captions or labels in the video.
-- English only.
+- Narration language: ask at the start of every project (the repo default is English).
 - Voice: one steady tone.
 - Jokes are researched real facts.
 - Standard mix: music +3 dB, SFX -6 dB, voice unchanged.
@@ -54,7 +54,7 @@ Default rules (the repo author's; change if the user says otherwise):
 5. **World.**
    - `lights.ts`: LIGHTS plus the LOOK sky/river/cloud palette per light.
    - `shade.ts`: two-tone shading and `untone()`.
-   - `build.ts`: town, houses and Kenney CC0 kit props, recoloured, with sight-line culling of anything blocking a camera.
+   - `build.ts` + `props/`: town, houses and EVERY prop built from code part by part (no Kenney kits, no downloaded models), with sight-line culling of anything blocking a camera. Spec: https://claude.ai/artifact/JdyDwYt7ZvZxdfwjL9kFKp
    - `paint.ts`: HD Canvas2D painted textures with seams painted in as dark tints.
    - `world.ts`: sky shader, fog = horizon colour, river, per-frame posing, sun frozen per shot and camera-relative.
 6. **Characters.**
@@ -65,7 +65,7 @@ Default rules (the repo author's; change if the user says otherwise):
    - Composer order: ink → lens pre → lens main → bloom → NEUTRAL tone map → grade (MSAA 4).
    - Every pixel parameter scales with output height / 1920.
 8. **Sound** (`~/bridge-short/audio/`: timeline.py, sfx_gen.py, sfx.py, music.py, instruments.py, dsp.py, mix.py).
-   - Event table → synthesized SFX plus an original score ducked under the voice.
+   - Event table (`EVENTS` in story.ts) → real recorded SFX from Freesound or Pixabay placed on the event frame, plus music ducked under the voice. Licence rules and `CREDITS.txt` in the Licensing section below.
    - Output: mix.wav (48 kHz, exact length), stems and cues.md.
    - Lock the picture's time constants before the sound is made. Any later timing change means re-running the sound.
 9. **Look checks.** Run `node scripts/bridge-stills.mjs out/<name>/x_ 100,400 0.5`.
@@ -89,7 +89,7 @@ Start every new short from `templates/bridge/` (copy to `src/videos/<name>/`): t
 - **Lens** (`lensblur.ts` + `dofAt` in story.ts): cInf px at 1080: hook/river CU 15-16, close-ups 12-14, MS 10-12, park 7, golden sway 5, wides/aerials 0. Focus on the eyes of the front row.
 - **Post** (`Bridge.tsx`): ink → lens pre → lens main → bloom (thr 1.0, int .5, 6 levels, radius .6) → NEUTRAL tone map → grade; MSAA 4. Film grain exists but is OFF (reference measures no grain; it quadruples the file size).
 - **Characters** (`toon.ts`/`cast.ts`/`cardshade.ts`): bean heads h/w .94, plum ink #241726, eyes .26 W apart, no blush, 14 expressions; adults 3.5 head-heights; walk bob 5 %, lean 1-7°, planted 0.8 m stride; blinks 0.5-2.3 s; tight contact shadow ~.5 under the feet + sun-direction tail by day; golden rim inner only (never an offset outer copy).
-- **Camera** (`story.ts`): cuts on big jumps, smootherstep glides 18-40 f, every hold creeps (no static hold ≥4 f), flip kicks decaying over 7 f on impacts, 4-4.6° rolls, foreground props (`FOREGROUND`) in ~1/3 of shots.
+- **Camera** (`story.ts`): NO hard cuts and no sudden jumps (video rule): big place/time changes use a continuous move (follow an object, fly-through, crane) or a 6-8 f crossfade; everything else is a slow smootherstep glide 18-40 f, every hold creeps (no static hold ≥4 f), flip kicks decaying over 7 f on impacts, 4-4.6° rolls, foreground props (`FOREGROUND`) in ~1/3 of shots.
 
 ## Look targets (measured from the reference; see references/reports/)
 - **Ink:**
@@ -103,7 +103,7 @@ Start every new short from `templates/bridge/` (copy to `src/videos/<name>/`): t
   - Fog = horizon colour, 25→420 m day, 20→360 m golden.
   - Bloom only on HDR emissives: threshold 1.0.
 - **Camera:**
-  - Hard cuts on big jumps. Everything else is a smootherstep glide of 18-40 f, peak ≤ 25 px/f at 720p.
+  - No hard cuts. Place/time changes: continuous move or 6-8 f crossfade. Everything else is a slow smootherstep glide of 18-40 f, peak ≤ 25 px/f at 720p. Push in smoothly on every object the voice names, then ease back out.
   - Every hold pushes in 0.15-0.35 %/f, with 0.6 %/f on punch words.
   - Rolls of 4-5°.
   - No hand-held float. Impact shakes flip sign every frame and decay over 7 f.
@@ -129,7 +129,7 @@ Start every new short from `templates/bridge/` (copy to `src/videos/<name>/`): t
 5. Contracts between owners live in exported constants (e.g. `NOINK` from ink.ts, `dofAt`/`FOREGROUND` from story.ts, `LIGHTS`/`LOOK` from lights.ts). Changing a contract means telling every owner that reads it.
 
 ## Gotchas
-- Kenney nature-kit materials are teal: recolour them by material name in build.ts.
+- No downloaded kits or models: if an old template still imports Kenney files, replace them with code-built props from `props/`.
 - Cameras end up inside houses: the sight-line culler in build.ts/world.ts removes anything blocking any camera ray.
 - Ink in the same merged effect pass as DOF gets overwritten. Ink must be its own pass before the blur.
 - Pixel-sized post parameters must scale with resolution: stills are at 0.5, the final at 1.333. R3F clamps dpr to ≥ 1, so `--scale 0.5` stills still render a 1080x1920 buffer.
@@ -152,10 +152,19 @@ Start every new short from `templates/bridge/` (copy to `src/videos/<name>/`): t
 
 ## Top-tier upgrades (lessons from a public breakdown of the reference style)
 - **Plan first:** run the `cartoon-short-director` skill before building (idea → SCRIPT.md → SCENES.md → PROMPTS.md), then implement here one scene per round.
+- **Specs:** rig (skeleton, IK, clothing) https://claude.ai/artifact/Y1oLh8ZW7XUzfewpGrWBvT · expressions, code-built world, world events and all lighting https://claude.ai/artifact/JdyDwYt7ZvZxdfwjL9kFKp
 - **Characters:** hero characters use the rig spec (3D skeleton + 2-bone IK, cylinder-wrapped clothing, full 2D redraw every frame): https://claude.ai/artifact/Y1oLh8ZW7XUzfewpGrWBvT. Knee-less billboards cannot sit, kneel, drive or grip. Crowds keep the old sprites; at most 4 rigged characters per shot.
 - **Shading:** white face, cel shade on one side, thin edge highlight, all following the scene sun; clothing lit the same way with sheen, edge highlight and fold lines; tree/roof shadows fall on character cards (colour texture only, never the ink).
 - **Expressions:** parametric, blendable emotions; brows lead, mouth follows ~2 f; eye-shape swaps hidden inside a blink plus a small head bounce. Hats and hair redrawn each frame with the head tilt.
 - **World:** build every prop from code part by part with pivots (doors, wheels, blades), real interiors and painted detail (cracks, pebbles, stitching, bolts, dirt). The world reacts on the beat: grooves, sparks, dust, bent rails, dents, camera kick.
-- **Light:** add a night preset with headlight spotlights, drifting cloud shadows, small speculars on metal and car paint only; faces keep a brightness floor at night.
+- **Light:** day, golden and night presets blended over time; local lights (headlights, street lamps, windows, fire) on prop anchors; drifting cloud shadows; small speculars on every shiny object as in the video (car paint, metal, saw blades, hard hats, glass); matte wood, ground, cloth and faces get none; faces keep a brightness floor at night.
 - **Camera:** every object the voice names gets a smooth push-in, then eases back out. Use road-level, high-down-the-road, through-the-side-window and driver-POV angles.
-- **Sound (option):** real recorded SFX from licensed sources (CC0/CC-BY, sources logged in sfx_sources.md) placed on the exact event frame, instead of synthesized ones. Pick the music after the final render by auditioning 2-3 tracks.
+- **Sound:** real recorded SFX placed on the exact event frame (default; synthesis only if the user asks). Pick the music after the final render by auditioning 2-3 tracks.
+
+## Licensing (SFX and music)
+- Sources: Freesound and Pixabay (sound effects and music). Nothing ripped from other videos.
+- Freesound CC0: allowed, credit optional (credit anyway). CC BY 3.0/4.0: allowed, credit REQUIRED (title, author, link, licence). CC BY-NC and Sampling+: do NOT use (monetised, sponsored or affiliate posts are commercial).
+- Pixabay Content License: commercial use allowed, no credit required (credit anyway). Some Pixabay music can still get a YouTube Content ID claim: download the track's licence certificate and keep it for disputes.
+- If Claude Code cannot download (login wall), the user downloads into `audio/sfx_raw/` and pastes each page URL; Claude reads title, author and licence from the page.
+- Log every file in `sfx_sources.md`: id | file | title | author | url | source | licence | download date | proof | frames used. Re-check the licence on the page at download time and save a screenshot or the certificate in `audio/licences/`.
+- Generate `CREDITS.txt` from the log for the video description, one line per used file: `"Title" by Author (URL) - Licence`, grouped Sound effects / Music. Include CC0 and Pixabay lines too. Never ship a render whose log has a missing licence.
